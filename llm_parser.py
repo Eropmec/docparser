@@ -5,7 +5,6 @@ LLM-парсер для интеллектуального разбора нор
 """
 
 from typing import List, Dict
-import json
 import re
 
 
@@ -13,9 +12,13 @@ class LLMConditionExtractor:
     """Извлечение условий с помощью LLM"""
     
     def __init__(self, model_path: str, n_ctx: int = 2048, n_threads: int = 4):
+        self.available = False
+        self.llm = None
+        
         try:
-            from llama_cpp import Llama
-            self.llm = Llama(
+            # Ленивый импорт: если библиотеки нет, мы просто перейдем в except
+            import llama_cpp
+            self.llm = llama_cpp.Llama(
                 model_path=model_path,
                 n_ctx=n_ctx,
                 n_threads=n_threads,
@@ -23,14 +26,12 @@ class LLMConditionExtractor:
             )
             self.available = True
         except ImportError:
-            self.available = False
-            print("llama-cpp-python не установлен - LLM недоступен")
+            print("ВНИМАНИЕ: llama-cpp-python не установлен. LLM недоступен, используется Regex-парсер.")
         except Exception as e:
-            self.available = False
             print(f"Ошибка загрузки модели: {e}")
     
     def extract_conditions(self, clause_text: str, clause_number: str) -> List[Dict]:
-        if not self.available:
+        if not self.available or self.llm is None:
             return []
         
         prompt = f"""Ты - эксперт по анализу нормативных документов.
@@ -54,6 +55,7 @@ class LLMConditionExtractor:
             result_text = response['choices'][0]['text'].strip()
             json_match = re.search(r'\[[\s\S]*\]', result_text)
             if json_match:
+                import json
                 return json.loads(json_match.group())
             return []
         except Exception as e:
@@ -71,10 +73,13 @@ class HybridParser:
             self.llm_extractor = LLMConditionExtractor(model_path)
     
     def parse_clause(self, clause_number: str, clause_text: str) -> List[Dict]:
+        # Если LLM включен и доступен, используем его
         if self.use_llm and self.llm_extractor and self.llm_extractor.available:
             conditions = self.llm_extractor.extract_conditions(clause_text, clause_number)
             if conditions:
                 return conditions
+        
+        # В противном случае (или если LLM упал) используем надежный Regex
         return self._regex_parse(clause_text, clause_number)
     
     def _regex_parse(self, text: str, clause_number: str) -> List[Dict]:
