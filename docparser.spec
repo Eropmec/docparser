@@ -21,13 +21,13 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    # Исключаем тяжелые и ненужные библиотеки, включая llama_cpp (он подгрузится динамически, если установлен)
+    # Исключаем llama_cpp из жесткой сборки, чтобы не ломать EXE, если wheel не встал. 
+    # Программа загрузит его динамически, если он есть в системе пользователя.
     excludes=['matplotlib', 'pandas', 'scipy', 'PIL', 'cv2', 'llama_cpp'],
     noarchive=False,
     optimize=0,
 )
 
-# ИСПРАВЛЕНИЕ: используем a.pure вместо устаревшего a.tree
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
