@@ -2,16 +2,8 @@
 
 block_cipher = None
 
+# Убрали llama_cpp отсюда, чтобы PyInstaller не искал его агрессивно, если он не установился
 hidden_imports = [
-    'llama_cpp',
-    'llama_cpp.llama_cpp',
-    'llama_cpp.llama_grammar',
-    'llama_cpp._internals',
-    'llama_cpp._utils',
-    'llama_cpp._logger',
-    'numpy',
-    'diskcache',
-    'typing_extensions',
     'json',
     're',
     'tkinter',
@@ -19,6 +11,8 @@ hidden_imports = [
     'tkinter.messagebox',
     'tkinter.filedialog',
     'tkinter.scrolledtext',
+    'dataclasses',
+    'typing'
 ]
 
 a = Analysis(
@@ -30,7 +24,7 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=['matplotlib', 'pandas', 'scipy', 'PIL', 'cv2'],
+    excludes=['matplotlib', 'pandas', 'scipy', 'PIL', 'cv2', 'llama_cpp'], # Исключаем llama_cpp, если его нет
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
@@ -53,7 +47,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=False, # Окно без консоли
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
