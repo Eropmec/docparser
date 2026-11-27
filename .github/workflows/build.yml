@@ -19,25 +19,31 @@ jobs:
         python-version: '3.11'
         architecture: 'x64'
     
-    - name: Install base dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
+    - name: Upgrade pip
+      run: python -m pip install --upgrade pip
     
-    - name: Try to install llama-cpp-python
+    - name: Install PyInstaller
+      run: pip install pyinstaller
+    
+    - name: Install llama-cpp-python (Pre-compiled Wheel)
       run: |
-        echo "Пытаемся установить llama-cpp-python..."
-        pip install llama-cpp-python --no-cache-dir || echo "LLM не установлен, продолжаем сборку без него (будет работать Regex-парсер)"
+        echo "Installing llama-cpp-python from pre-compiled wheels..."
+        pip install llama-cpp-python --prefer-binary --extra-index-url=https://jllllll.github.io/llama-cpp-python-cuBLAS-wheels/AVX2/x64
       continue-on-error: true
     
-    - name: Build EXE
+    - name: Verify installation
       run: |
-        echo "Запуск PyInstaller..."
+        python -c "import sys; print('Python version:', sys.version)"
+        python -c "import llama_cpp; print('SUCCESS: llama_cpp is installed!')" || echo "WARNING: llama_cpp not found, will use regex fallback"
+    
+    - name: Build EXE with PyInstaller
+      run: |
+        echo "Running PyInstaller..."
         pyinstaller docparser.spec --clean --noconfirm
     
-    - name: Upload EXE
+    - name: Upload EXE Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: DocParser-EXE
+        name: DocParser-Windows-EXE
         path: dist/DocParser.exe
         retention-days: 30
